@@ -4,30 +4,32 @@ from urllib.parse import urlparse
 import uuid
 
 def fetch_image():
-    # Prompt user for image URL
     url = input("Enter the image URL: ").strip()
-
-    # Directory to store fetched images
     folder_name = "Fetched_Images"
     os.makedirs(folder_name, exist_ok=True)
 
     try:
-        # Make HTTP GET request
-        response = requests.get(url, stream=True)
-        response.raise_for_status()  # Raise error for bad status codes
+        # Spoof headers to look like a real browser
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                      "image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://upload.wikimedia.org/"
+        }
 
-        # Extract filename from URL
+        response = requests.get(url, stream=True, headers=headers, timeout=15)
+        response.raise_for_status()
+
         parsed_url = urlparse(url)
         filename = os.path.basename(parsed_url.path)
-
-        # If no filename, generate one
         if not filename:
             filename = f"image_{uuid.uuid4().hex}.jpg"
 
-        # Full path for saving
         file_path = os.path.join(folder_name, filename)
 
-        # Save image in binary mode
         with open(file_path, "wb") as f:
             for chunk in response.iter_content(1024):
                 f.write(chunk)
